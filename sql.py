@@ -38,23 +38,25 @@ class SqlAST(object):
 #https://stackoverflow.com/questions/2582138/finding-and-replacing-elements-in-a-list-python
     def convertSelect(self, select):
         query = re.split('\s|(?<!\d)[,.](?!\d)', select)
-        #matching = [s for s in queryList if "AVG" in s]
-        print(query)
+        query = list(filter(None, query))
         for index, word in enumerate(query):
             if "AVG(" in word:
                 word = re.sub("AVG", "", word)
-                word = ''.join(e for e in word if e.isalnum())
-                #print(type(word))
-                dog = word.replace(word," SUM(" + word + "), " +  "COUNT(" + word + ")")
-                select[index] = dog
-                print(select)
+                newSelect = word.replace(word," SUM" + word + ", " +  "COUNT" + word + "")
+                try:
+                    if query[index + 1]: 
+                        newSelect += ", "
+                except IndexError:
+                    pass
+                query[index] = newSelect
+        return(query)
 
 def main():
-    test = SqlAST("SELECT AVG(roy), AVG(dog), cat FROM turbine WHERE")
+    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE")
     select, tables, where = test.parse()
     #print(select, "\n", tables, "\n", where)
     stmt = test.convertSelect(select)
-    #print(''.join(result))
+    print(''.join(stmt))
     #final = test.convert(result)
     #print(final)
 

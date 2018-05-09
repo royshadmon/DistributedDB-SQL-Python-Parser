@@ -14,17 +14,49 @@ class SqlAST(object):
     def select(self):
         return (self.query)
 
-    def split(self):
-        query = re.split(r'\s(?=(?:AVG|FROM|WHERE)\b)', self.query)
-        return(query)
-
-
-
+    # need to split into different lists to make AST
+    def parse(self):
+        self.query = re.split(r'\s(?=(?:FROM|WHERE)\b)', self.query)
+        #print(self.query)
+        select = self.query[0]
+        tables = self.query[1]
+        where = self.query[2]
+        #print(where)
+        #self.query=re.split('\s|(?<!\d)[,.](?!\d)', self.query)
+        #for index, word in enumerate(self.query):
+        #    if "AVG(" in word:
+        #        word = re.sub("AVG", "", word)
+                #word = ''.join(e for e in word if e.isalnum())
+        #        self.query[index] = " SUM" + word + ", " +  "COUNT" + word
+        #    if "FROM" not in self.query[(index+1) % len(self.query)]:
+        #        i = 1
+        #        self.query[index] += ", "
+        #    else:
+        #        self.query[index] += " "
+        #    print(index, word)
+        return(select, tables, where)
+#https://stackoverflow.com/questions/2582138/finding-and-replacing-elements-in-a-list-python
+    def convertSelect(self, select):
+        query = re.split('\s|(?<!\d)[,.](?!\d)', select)
+        #matching = [s for s in queryList if "AVG" in s]
+        print(query)
+        for index, word in enumerate(query):
+            if "AVG(" in word:
+                word = re.sub("AVG", "", word)
+                word = ''.join(e for e in word if e.isalnum())
+                #print(type(word))
+                dog = word.replace(word," SUM(" + word + "), " +  "COUNT(" + word + ")")
+                select[index] = dog
+                print(select)
 
 def main():
-    test = SqlAST("SELECT AVG(roy), AVG(dog) FROM turbine WHERE")
-    result = test.split()
-    print(result)
+    test = SqlAST("SELECT AVG(roy), AVG(dog), cat FROM turbine WHERE")
+    select, tables, where = test.parse()
+    #print(select, "\n", tables, "\n", where)
+    stmt = test.convertSelect(select)
+    #print(''.join(result))
+    #final = test.convert(result)
+    #print(final)
 
 if __name__ == '__main__':
     main()

@@ -4,8 +4,6 @@ import re
 
 # re.split(r'(FROM|WHERE)', query)
 # re.split(r'\s(?=(?:FROM|WHERE)\b)'
-SELECTKEYWORDS = ["AVG"]
-KEYWORDS = ["FROM"]
 
 class SqlAST(object):
     def __init__(self, query):
@@ -16,27 +14,14 @@ class SqlAST(object):
 
     # need to split into different lists to make AST
     def parse(self):
-        self.query = re.split(r'\s(?=(?:FROM|WHERE)\b)', self.query)
-        #print(self.query)
+        self.query = re.split(r'\s(?=(?:SELECT|FROM|WHERE)\b)', self.query)
         select = self.query[0]
         tables = self.query[1]
         where = self.query[2]
-        #print(where)
-        #self.query=re.split('\s|(?<!\d)[,.](?!\d)', self.query)
-        #for index, word in enumerate(self.query):
-        #    if "AVG(" in word:
-        #        word = re.sub("AVG", "", word)
-                #word = ''.join(e for e in word if e.isalnum())
-        #        self.query[index] = " SUM" + word + ", " +  "COUNT" + word
-        #    if "FROM" not in self.query[(index+1) % len(self.query)]:
-        #        i = 1
-        #        self.query[index] += ", "
-        #    else:
-        #        self.query[index] += " "
-        #    print(index, word)
+        print("list is\n", self.query)
         return(select, tables, where)
-#https://stackoverflow.com/questions/2582138/finding-and-replacing-elements-in-a-list-python
-    def convertSelect(self, select):
+
+    def evalSelect(self, select):
         query = re.split('\s|(?<!\d)[,.](?!\d)', select)
         query = list(filter(None, query))
         for index, word in enumerate(query):
@@ -51,11 +36,19 @@ class SqlAST(object):
                 query[index] = newSelect
         return(query)
 
+    def ensureTimeSeries (self, whereClause):
+        if any("EventTime" in keyword for keyword in whereClause):
+            return(True)
+
 def main():
-    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE")
+    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE SELECT dog from cat;")
     select, tables, where = test.parse()
+    if test.ensureTimeSeries(where):
+        print("yessir")
+    else:
+        print("Unsupported query. Must have time-interval.")
     #print(select, "\n", tables, "\n", where)
-    stmt = test.convertSelect(select)
+    stmt = test.evalSelect(select)
     print(''.join(stmt))
     #final = test.convert(result)
     #print(final)

@@ -14,11 +14,18 @@ class SqlAST(object):
 
     # need to split into different lists to make AST
     def parse(self):
+        select = []
+        tables = []
+        where = []
         self.query = re.split(r'\s(?=(?:SELECT|FROM|WHERE)\b)', self.query)
-        select = self.query[0]
-        tables = self.query[1]
-        where = self.query[2]
-        print("list is\n", self.query)
+        print(self.query)
+        for i, part in enumerate(self.query):
+            if "SELECT" in part:
+                select.append(part)
+            if "FROM" in part:
+                tables.append(part)
+            if "WHERE" in part:
+                where.append(part)
         return(select, tables, where)
 
     def evalSelect(self, select):
@@ -36,20 +43,25 @@ class SqlAST(object):
                 query[index] = newSelect
         return(query)
 
-    def ensureTimeSeries (self, whereClause):
-        if any("EventTime" in keyword for keyword in whereClause):
+
+    def ensureTimeSeries(self, where):
+        #if where.Contains("EVENTTIME"):
+        #filter(lambda string: "EVENTTIME" in string, where)
+        if any("EVENTTIME" in string for string in where):
             return(True)
+        else:
+            return(False)
 
 def main():
-    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE SELECT dog from cat;")
+    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND SELECT dog from cat where babe = 0 AND EventTime < 4;")
     select, tables, where = test.parse()
     if test.ensureTimeSeries(where):
         print("yessir")
     else:
         print("Unsupported query. Must have time-interval.")
     #print(select, "\n", tables, "\n", where)
-    stmt = test.evalSelect(select)
-    print(''.join(stmt))
+    #stmt = test.evalSelect(select)
+    #print(''.join(stmt))
     #final = test.convert(result)
     #print(final)
 

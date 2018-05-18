@@ -14,11 +14,8 @@ class SqlAST(object):
 
     # need to split into different lists to make AST
     def parse(self):
-        select = []
-        tables = []
-        where = []
+        select, tables, where = [], [], []
         self.query = re.split(r'\s(?=(?:SELECT|FROM|WHERE)\b)', self.query)
-        print(self.query)
         for i, part in enumerate(self.query):
             if "SELECT" in part:
                 select.append(part)
@@ -29,34 +26,37 @@ class SqlAST(object):
         return(select, tables, where)
 
     def evalSelect(self, select):
-        query = re.split('\s|(?<!\d)[,.](?!\d)', select)
-        query = list(filter(None, query))
-        for index, word in enumerate(query):
-            if "AVG(" in word:
-                word = re.sub("AVG", "", word)
-                newSelect = word.replace(word," SUM" + word + ", " +  "COUNT" + word + "")
-                try:
-                    if query[index + 1]: 
-                        newSelect += ", "
-                except IndexError:
-                    pass
-                query[index] = newSelect
-        return(query)
-
+        for i, stmt in enumerate(select):
+            stmt = re.split('\s|(?<!\d)[,.](?!\d)', stmt)
+            stmt = list(filter(None, stmt))
+            pattern = re.compile('\A(\w\s+)*(AVG)\s*\(\s*w*')
+            for j, word in enumerate(stmt):
+                if pattern.match(word): 
+                #if " AVG(" in word:
+                    word = re.sub("AVG", "", word)
+                    newSelect = word.replace(word," SUM" + word + ", " +  "COUNT" + word + "")
+                    try:
+                        if stmt[j + 1]: 
+                            newSelect += ", "
+                    except IndexError:
+                        pass
+                    stmt[j] = newSelect
+            select[i] = stmt
+        return(select)
 
     def ensureTimeSeries(self, where):
-        #if where.Contains("EVENTTIME"):
-        #filter(lambda string: "EVENTTIME" in string, where)
         if any("EVENTTIME" in string for string in where):
             return(True)
         else:
             return(False)
 
 def main():
-    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND SELECT dog from cat where babe = 0 AND EventTime < 4;")
+    #this sql query causes a bug
+    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND AVGSELECTAVG(dog) from cat where babe = 0 AND EventTime < 4;")
     select, tables, where = test.parse()
     if test.ensureTimeSeries(where):
-        print("yessir")
+        select = test.evalSelect(select)
+        print(select)
     else:
         print("Unsupported query. Must have time-interval.")
     #print(select, "\n", tables, "\n", where)

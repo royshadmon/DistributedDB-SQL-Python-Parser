@@ -2,9 +2,6 @@
 
 import re
 
-# re.split(r'(FROM|WHERE)', query)
-# re.split(r'\s(?=(?:FROM|WHERE)\b)'
-
 class SqlAST(object):
     def __init__(self, query):
         self.query = query.upper()
@@ -32,7 +29,6 @@ class SqlAST(object):
             pattern = re.compile('\A(\w\s+)*(AVG)\s*\(\s*w*')
             for j, word in enumerate(stmt):
                 if pattern.match(word): 
-                #if " AVG(" in word:
                     word = re.sub("AVG", "", word)
                     newSelect = word.replace(word," SUM" + word + ", " +  "COUNT" + word + "")
                     try:
@@ -40,7 +36,8 @@ class SqlAST(object):
                             newSelect += ", "
                     except IndexError:
                         pass
-                    stmt[j] = newSelect
+                    stmt[j] = newSelect.strip()
+            stmt = ' '.join(str(word) for word in stmt)
             select[i] = stmt
         return(select)
 
@@ -50,17 +47,31 @@ class SqlAST(object):
         else:
             return(False)
 
+    def mergeStmts(self, select, tables, where):
+        stmt = ""
+        for i, word in enumerate(select):
+            stmt += word + " " + tables[i]
+            try:
+                stmt += " " + where[i] + " "
+            except IndexError:
+                pass
+        print(stmt)
+        #print(select[1])
+        #print(tables)
+        #print(where)
+
 def main():
     #this sql query causes a bug
-    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND AVGSELECTAVG(dog) from cat where babe = 0 AND EventTime < 4;")
+    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND SELECT(dog) from cat where babe = 0 AND EventTime < 4;")
     select, tables, where = test.parse()
+    #print(select)
     if test.ensureTimeSeries(where):
         select = test.evalSelect(select)
-        print(select)
+        query = test.mergeStmts(select, tables, where)
+        
     else:
         print("Unsupported query. Must have time-interval.")
     #print(select, "\n", tables, "\n", where)
-    #stmt = test.evalSelect(select)
     #print(''.join(stmt))
     #final = test.convert(result)
     #print(final)

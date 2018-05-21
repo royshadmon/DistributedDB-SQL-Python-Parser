@@ -1,6 +1,7 @@
 #http://www.jayconrod.com/posts/39/a-simple-interpreter-from-scratch-in-python-part-3
 
 import re
+from connectdb import runDB
 
 class SqlAST(object):
     def __init__(self, query):
@@ -55,26 +56,23 @@ class SqlAST(object):
                 stmt += " " + where[i] + " "
             except IndexError:
                 pass
-        print(stmt)
-        #print(select[1])
-        #print(tables)
-        #print(where)
+        return stmt
+
+    def evalQuery(self, query):
+        run = runDB(query)
+        return run.selectStmt()
 
 def main():
     #this sql query causes a bug
-    test = SqlAST("SELECT AVG(roy), AVG(dog), Cat FROM turbine WHERE EventTime > 6 AND SELECT(dog) from cat where babe = 0 AND EventTime < 4;")
+    test = SqlAST("SELECT AVG(pressure), AVG(temperature) from turbine;")
     select, tables, where = test.parse()
-    #print(select)
     if test.ensureTimeSeries(where):
         select = test.evalSelect(select)
         query = test.mergeStmts(select, tables, where)
-        
+        test.evalQuery(query)
+
     else:
         print("Unsupported query. Must have time-interval.")
-    #print(select, "\n", tables, "\n", where)
-    #print(''.join(stmt))
-    #final = test.convert(result)
-    #print(final)
 
 if __name__ == '__main__':
     main()

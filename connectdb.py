@@ -15,9 +15,11 @@ class runDB(object):
             # create a psycopg2 cursor that can execute queries
             cursor = conn.cursor()
             #cursor.execute(query)
+            print(self.query)
             cursor.execute(self.query)
-            rows = cursor.fetchall()
-            print(rows)
+            conn.commit()
+            #rows = cursor.fetchall()
+            #print(rows)
         except Exception as e:
             print("Uh oh, can't connect. Invalid dbname, user or password?")
             print(e)

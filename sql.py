@@ -45,8 +45,9 @@ class SelectSqlAST(object):
             select[i] = stmt
         return(select)
 
-    def ensureTimeSeries(self, where):
-        if any("EVENTTIME" in string for string in where):
+    def ensureTimeSeries(self, where, select):
+        if len(select) == len(where) and all("EVENTTIME" in string for string in where):
+            print(where)
             return(True)
         else:
             return(False)
@@ -55,10 +56,7 @@ class SelectSqlAST(object):
         stmt = ""
         for i, word in enumerate(select):
             stmt += word + " " + tables[i]
-            try:
-                stmt += " " + where[i] + " "
-            except IndexError:
-                pass
+            stmt += " " + where[i] + " "
         return(stmt)
 
 
@@ -69,13 +67,11 @@ class CreateSqlAST(object):
     def parse(self):
         self.create = re.split('CREATE\s+TABLE\s+[A-Z]+[A-Z0-9]*\s*\(\s*', self.create)
         self.create = re.split('\,|\)|\;', self.create[1])
-        #print(self.create)
         return (self.create)
 
     def ensureTimeSeries(self):
         TIMEpattern = re.compile('(EVENTTIME)\s+(DATE)')
         for i, word in enumerate(self.create):
-           # print(word.strip())
             if TIMEpattern.match(word.strip()):
                 print("yes")
                 return(True)
@@ -94,24 +90,25 @@ class runQuery(object):
 
 def main():
     #this sql query causes a bug
-    test = SelectSqlAST("Select temperature, pressure, EventTime from turbine where EventTime < '2018-06-15';")
+    test = SelectSqlAST("Select AVG(temperature), pressure from turbine where EventTime < '2019-01-01' AND Select temperature from turbine where dog < 2;")
     select, tables, where = test.parse()
-    if test.ensureTimeSeries(where):
+    print(where)
+    if test.ensureTimeSeries(where, select):
         select = test.evalSelect(select)
         query = test.mergeStmts(select, tables, where)
-        run = runQuery(query)
-        run.evalQuery()
+        #run = runQuery(query)
+        #run.evalQuery()
     else:
         print("Unsupported query. Must have time-interval.")
 
-    query = "Create table roy2232 (roy int, dog varchar(255), eventtime date, lake time);"
-    create = CreateSqlAST(query)
-    parsedCreate = create.parse()
-    if create.ensureTimeSeries():
-        run = runQuery(query)
-        run.evalQuery()
-    else:
-        print("Must create table with `EventTime' as a column name")
+    #query = "Create table roy2232 (roy int, dog varchar(255), eventtime date, lake time);"
+    #create = CreateSqlAST(query)
+    #parsedCreate = create.parse()
+    #if create.ensureTimeSeries():
+    #    run = runQuery(query)
+    #    run.evalQuery()
+    #else:
+    #    print("Must create table with `EventTime' as a column name")
 
 if __name__ == '__main__':
     main()

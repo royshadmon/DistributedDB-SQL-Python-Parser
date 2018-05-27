@@ -18,8 +18,8 @@ class runDB(object):
             print(self.query)
             cursor.execute(self.query)
             conn.commit()
-            #rows = cursor.fetchall()
-            #print(rows)
+            rows = cursor.fetchall()
+            print(rows)
         except Exception as e:
             print("Uh oh, can't connect. Invalid dbname, user or password?")
             print(e)

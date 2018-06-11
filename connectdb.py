@@ -6,7 +6,7 @@ class runDB(object):
     def __init__(self, query): 
         self.query = query
 
-    def selectStmt(self):
+    def stmt(self):
         try:
             connect_str = "dbname='royshadmon' user='royshadmon' host='localhost' " + \
                             "password=''"
@@ -14,10 +14,7 @@ class runDB(object):
             conn = psycopg2.connect(connect_str)
             # create a psycopg2 cursor that can execute queries
             cursor = conn.cursor()
-            #cursor.execute(query)
-            print(self.query)
             cursor.execute(self.query)
-            conn.commit()
             rows = cursor.fetchall()
             print(rows)
         except Exception as e:

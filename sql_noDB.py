@@ -4,6 +4,7 @@ from connectdb import runDB
 class SelectSqlAST(object):
     def __init__(self, query):
         self.query = query.upper()
+        self.query = " ".join(self.query.split())
 
     def select(self):
         return (self.query)
@@ -97,7 +98,7 @@ def main():
         if sess.ensureTimeSeries(where, select):
             select = sess.evalSelect(select)
             query = sess.mergeStmts(select, tables, where)
-            print(query.upper())
+            print(" ".join(query.split()))
             main()
         else:
             print("Unsupported query. Must have time-interval.")

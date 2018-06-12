@@ -15,7 +15,6 @@ class SelectSqlAST(object):
         self.query = re.split(r'\s(?=(?:SELECT|FROM|WHERE)\b)', self.query)
         for i, part in enumerate(self.query):
             if "SELECT" in part:
-                #part = re.sub(r'\(.*?\)', lambda x: ''.join(x.group(0).split()), part)
                 select.append(part.strip())
             if "FROM" in part:
                 tables.append(part.strip())
@@ -24,38 +23,43 @@ class SelectSqlAST(object):
         return(select, tables, where)
 
     def evalSelect(self, select):
-        avg = False
         for i, stmt in enumerate(select):
             stmt = re.split('\s|(?<!\d)[,.](?!\d)', stmt)
             stmt = list(filter(None, stmt))
             AVG = re.compile('AVG')
             SELpattern = re.compile('(SELECT)')
             PEEKparen = re.compile('[\s | \w]*\(\w*')
+            SUMpattern = re.compile('(SUM)')
+            COUNTpattern = re.compile('(COUNT)')
             for j, word in enumerate(stmt):
                 word = word.strip()
                 if AVG.match(word): 
-                    avg = True
                     word = re.sub("AVG", "", word)
                     word = word.replace(word," SUM(" + stmt[j+1] + "), " +  "COUNT(" + stmt[j+1] + ")")
                     stmt.remove(stmt[j+1])
                     try:
-                        if stmt[j + 2]:
+                        if stmt[j + 1]:
                             word += ", "
                     except IndexError:
                         pass
                     stmt[j] = word.strip()
 
                 elif not SELpattern.match(word) and (j < len(stmt) - 1):
-                    if not PEEKparen.match(word):
+                    if SUMpattern.match(word) or COUNTpattern.match(word):
+                        stmt[j] = word + "(" + stmt[j+1] + ")"
+                        stmt.remove(stmt[j+1])
+                        try:
+                            if stmt[j+1]:
+                                stmt[j] += ","
+                        except IndexError:
+                            continue
+                    elif not PEEKparen.match(word):
                         stmt[j] = word + ","
                     else:
                         stmt[j] = word
             stmt = ' '.join(str(word) for word in stmt)
             select[i] = stmt
-        if avg:
-            return(select, avg)
-        else:
-            return(self.query, avg)
+        return(select)
 
     def ensureTimeSeries(self, where, select):
         if len(select) == len(where) and all("EVENTTIME" in string for string in where):
@@ -66,12 +70,10 @@ class SelectSqlAST(object):
     def mergeStmts(self, select, tables, where):
         stmt = ""
         for i, word in enumerate(select):
-            print(where[i])
             stmt += word + " " + tables[i] + " " + where[i]
             try:
                 if select[i+1]: 
                     stmt += " ("
-
             except IndexError:
                 pass
         i = 1
@@ -84,17 +86,17 @@ class SelectSqlAST(object):
 
 def main():
     query = input('AnyLog # ')
+    if len(query.strip()) == 0:
+        main()
     sess = SelectSqlAST(query)
     hint = query.upper().strip().split(" ")
     if re.compile('(DROP)|(CREATE)|(INSERT)').match(hint[0]):
         main()
     else:
-        print ("hello")
         select, tables, where = sess.parse()
         if sess.ensureTimeSeries(where, select):
-            select, avgBool = sess.evalSelect(select)
-            if avgBool:
-                query = sess.mergeStmts(select, tables, where)
+            select = sess.evalSelect(select)
+            query = sess.mergeStmts(select, tables, where)
             print(query.upper())
             main()
         else:

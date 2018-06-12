@@ -1,0 +1,51 @@
+---------------------------------
+NOTE:
+Running the parser with the DB will return the resulted rows.
+Running the parser without the DB will return the resulted parsed/modified query.
+
+Furthermore, if testing, please copy and paste the queries below from a text editor such as Atom or Sublime. For some reason, Terminal doesn't copy and paste correctly. 
+---------------------------------
+
+# install python 3
+brew install python3
+
+# install psql if you want to run parser against PSQL DBMS
+# change parameters in connectdb.py and populateDB.py
+# follow this tutorial:
+https://www.codementor.io/engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb
+
+# install db module
+pip3 install psycopg2
+
+# install regex module
+pip3 install re
+
+# populate DB
+python3 populateDB.py
+
+-------------------------------------------
+
+# To run parser that's connected to DB
+python3 sql_wDB.py
+
+# To run parser that's not connected to DB
+python3 sql_noDB.py
+
+--------------------------------------------
+# Example SQL Queries to enter:
+
+# will return AnyLog error
+SELECT(Temperature) from turbine where Temperature > 20;
+
+#Singular
+# Will pass
+SELECT (AVG(Temperature)) from turbine where eventtime > '2018-03-01';
+
+SELECT AVG(Temperature), Count(pressure) from turbine where eventtime > '2018-03-01';
+
+#Recursive queries
+# Will pass
+select avg(temperature) from turbine where eventtime = '2018-03-13' and exists (select pressure from turbine where eventtime > '2018-02-13' and exists (select * from turbine where eventtime < '2018-03-13' and exists (select * from turbine where eventtime = '2018-02-17')));
+
+# Will pass
+select avg(temperature) from turbine where eventtime = '2018-03-13' and exists (select pressure from turbine where eventtime > '2018-02-13' and exists (select * from turbine where eventtime < '2018-03-13' and exists (select * from turbine where eventtime = '2018-03-13' and exists( select * from turbine where eventtime = '2018-03-13'))));

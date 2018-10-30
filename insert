@@ -1,0 +1,10 @@
+Drop Table If Exists Turbine;
+
+Create Table Turbine ( Temperature Int, Pressure Int, EventTime Date );
+
+Insert Into Turbine Values (80, 5, '2018-04-23'), (82, 7, '2018-03-13'),  (89, 12, '2017-01-15'),  (60, 12, '2018-02-17'),  (102, 20, '2018-01-21'),  (82, 7, '2018-03-16'),  (81, 4, '2018-03-13'), (62, 9, '2018-03-13');
+
+
+select temperature, pressure from turbine where EventTime > '2016-01-12' And Exists (select temperature from turbine where EventTime < '2019-01-12');
+
+select temperature, pressure from turbine where EventTime > '2016-01-12' And Exists (select temperature from turbine where EventTime < '2019-01-12' And Exists (select pressure from turbine where pressure < 9 And EventTime > '2018-03-01'));
